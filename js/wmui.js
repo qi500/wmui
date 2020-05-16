@@ -4,6 +4,7 @@
  * Author：仙客来
  * Date  : 2020-05-16
  * Email ：<1796627261@qq.com>
+ * url   ：https://github.com/wamkj/wmui
  * 调用组件		:wmui.loadVue(url)
  * 批量加载js	:wmui.loadJs([url])
  * 加载 css     :wmui.loadCss(url)
