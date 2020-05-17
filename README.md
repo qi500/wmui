@@ -120,7 +120,7 @@ wmui.js实现任意Vue组件在html中加载调用
   批量加载js	:wmui.loadJs([url])  
   加载 css     :wmui.loadCss(url)  
   合并对象		:wmui.objassign(obj1,obj2)  
-  本地缓存		:wmui.chache(key,value,有效期(s))  
+  本地缓存		:wmui.cache(key,value,有效期(s))  
   ajax请求
   wmui.ajax({  
       method:"get",  
