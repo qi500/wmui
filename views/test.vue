@@ -1,18 +1,16 @@
 <template>
-	<div>
-		<div>
+	<div class="test">
 			{{ message }}
 			<button @click="testcli">组件一</button>
 			<testasss :testa='message'></testasss>
 			<testw :testw="message"></testw>
 			<test-name :testname='message'></test-name>
-		</div>
 	</div>
 	
 </template>
 <script>
 
-	import test-name from "./views/test-name.vue?a=12";
+	import testname from "./views/test-name.vue?a=12";
 	// 无扩展名时不能在后面加参数
 	import testw from "./views/testw";
 	var aaaaaaa= 11123456;
@@ -23,7 +21,7 @@
 
 	// export default
 	// module.exports =
-	export default {
+	module.exports ={
 		name: 'test',
 		props: ['model'],
 		data: function () {
@@ -34,7 +32,6 @@
 	        }
 	    },
 	    created:function(e) {
-			// console.log(this);
 	  	},
 		methods:{
 			testcli:function() {
@@ -42,18 +39,19 @@
 			}
 		},
 		components: {
-			'test-name':test-name,
+			'test-name':testname,
 	        'testasss':wmui.loadVue("./views/testasss.vue")
 	    },
 	}
 </script>
-<style lang="css">
+<style lang="css" scoped>
 	p{
 		padding:0;
 		margin: 0;
 
 	}
-	div{
-		margin: 0
+	.test{
+		margin: 0;
+		color:#4CAF50;
 	}
 </style>

@@ -25,13 +25,13 @@
 		}
 	}
 </script>
-<style lang="css">
+<style lang="css" scoped>
 	p{
 		padding:0;
 		margin: 0;
 
 	}
 	div{
-		margin: 0
+	    color: #03A9F4;
 	}
 </style>
