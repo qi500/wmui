@@ -1,10 +1,10 @@
 
 /**
- * [wmui 万盟ui插件 v2.1.2]
+ * [wmui wmui.js插件 v2.1.3]
  * Author：仙客来
- * Date  : 2020-05-16
+ * Date  : 2020-05-17
  * Email ：<1796627261@qq.com>
- * url   ：https://github.com/wamkj/wmui
+ * url   : https://github.com/wamkj/wmui
  * 调用组件		:wmui.loadVue(url)
  * 批量加载js	:wmui.loadJs([url])
  * 加载 css     :wmui.loadCss(url)
@@ -20,7 +20,8 @@
  *       console.log(message);
  *   }
  * });
- * 加载js代码：loadJsCode(code)
+ * 加载js代码：wmui.loadJsCode(code)
+ * 加载css代码：wmui.loadCssCode(code)
  * 
  */
 (function (root, factory) {
@@ -42,46 +43,34 @@
         parseComponent: function (content, options) {
             if (!content) throw Error("content is null.");
             if (!options) options = {};
-            // 匹配生成style样式
+
+            // 匹配出模板字符串
+            var template = content.match(/(<template.*?>)[\s\S]*?(<\/template>)/gmi);
+            var html = "";
+            if (template != null && template.length > 0) {
+                for (var i = 0; i < template.length; i++) {
+                    html += template[i].replace(/^(<template.*?>)+|(<\/template>)+$/gmi,'');
+                }
+            }
+
+            // 匹配出所有style样式内容
             var stylesone = content.match(/(<style.*?>)[\s\S]*?(<\/style>)/gmi);
             var style = "";
             if (stylesone != null && stylesone.length > 0) {
-            	var stylesone_str = "";
+                // 生成页面id字符串
+                var randomStr = 'data-v-'+this.randomStr(8);
+
+            	// 匹配出其中一个style中的样式
+                var stylesone_str = "";
     	        for (var i = 0; i < stylesone.length; i++) {
-    	        	stylesone_str += stylesone[i].replace(/^(<style.*?>)+|(<\/style>)+$/gmi,'');
+                    // 解析样式
+                    var parseTemplateStyles = this.parseTemplateStyles(randomStr,stylesone[i],style,html);
+                    style = parseTemplateStyles.style;
+                    html = parseTemplateStyles.html;
+                    
     	        }
-
-    	        var stylesonestrAttrs = content.match(/<style[^>]*>/gmi);
-    	        if (stylesonestrAttrs != null && stylesonestrAttrs.length > 0) {
-    	        	stylesonestrAttrs = stylesonestrAttrs[0].replace(/^(<style)+|(>)+$/gmi,'');
-    			}else{
-    				stylesonestrAttrs = '';
-    			}
-    			
-    			style = "<component scoped :is=\"'style'\"";
-    			style += stylesonestrAttrs;
-    	        style += ">";
-    	        style += stylesone_str;
-    	        style += "</component>";
             }
-            // 匹配挂载javascript字符串
-      		var scriptsone = content.match(/(<script.*?>)[\s\S]*?(<\/script>)/gmi);
-      		var script = "";
-      		if (scriptsone != null && scriptsone.length > 0) {
-            	
-    	        for (var i = 0; i < scriptsone.length; i++) {
-    	        	script += scriptsone[i].replace(/^(<script.*?>)+|(<\/script>)+$/gmi,'');
-    	        }
-    	    }
-    	    // 匹配出模板字符串
-            var template = content.match(/(<template.*?>)[\s\S]*?(<\/template>)/gmi);
-      		var html = "";
-      		if (template != null && template.length > 0) {
-    	        for (var i = 0; i < template.length; i++) {
-    	        	html += template[i].replace(/^(<template.*?>)+|(<\/template>)+$/gmi,'');
-    	        }
-    	    }
-
+            
             // 合并style样式
             if (style) {
                 var index = html.lastIndexOf("</");
@@ -91,8 +80,20 @@
             }
             options.template = html;
 
+
+            // 匹配挂载javascript字符串
+      		var scriptsone = content.match(/(<script.*?>)[\s\S]*?(<\/script>)/gmi);
+      		var script = "";
+      		if (scriptsone != null && scriptsone.length > 0) {
+            	
+    	        for (var i = 0; i < scriptsone.length; i++) {
+    	        	script += scriptsone[i].replace(/^(<script.*?>)+|(<\/script>)+$/gmi,'');
+    	        }
+    	    }
+
             // 更新javascript字符串
             var scripttxt_options = this.parseimports(script,options);
+            var oldscript = script;
             scripttxt = scripttxt_options.scripttxt;
             options = scripttxt_options.options;
 
@@ -102,7 +103,7 @@
             // 执行组件export default或module.exports=头部js
             var edmheadstr = scripttxt.replace(edmheadstrRegExp,'').replace(/(^\s*)|(\s*$)/g, "");
             if (edmheadstr != null && edmheadstr.length >0) {
-                var edmheadstrs = edmheadstr.replace(/import [\s\S]*? from (['"])(?:(?!\1).)*?\1\;/gmi,'').replace(/(^\s*)|(\s*$)/g, "");
+                var edmheadstrs = edmheadstr.replace(/import [\s\S]*? from (['"])(?:(?!\1).)*?\1\;/gmi,'').replace(/import (['"])(?:(?!\1).)*?\1\;/gmi, "").replace(/(^\s*)|(\s*$)/g, "");
                 if (edmheadstrs != null  && edmheadstrs.length >0) {
                     try {
                         this.loadJsCode(edmheadstrs);
@@ -117,12 +118,14 @@
             if (scriptstrtxts != null && scriptstrtxts.length > 0 ) {
                 scriptstrtxts = scriptstrtxts.join('');
                 script = "(" + /{[\s\S]*}/gmi.exec(scriptstrtxts) + ")";
+
                 // 把字符串转当成js执行
                 // var obj = eval(script);
                 try {
                     var obj = (new Function("return " + script))();
+
                 }catch(err) {
-                    throw new Error("Compile error: The script part of the Vue component is compiled incorrectly. Please check the syntax："+scripttxt);
+                    throw new Error("Compile error: The script part of the Vue component is compiled incorrectly. Please check the syntax："+oldscript);
                 }
                 // 把每个对象中的函数方法添加到options上
                 for (var prop in obj) {
@@ -133,6 +136,82 @@
             
             return options;
         },
+        // 生成字符串
+        randomStr:function (len) {
+            len = len || 32;
+        　　var $chars = 'abcdefhijkmnprstwxyz123456780';
+        　　var maxPos = $chars.length;
+        　　var pwd = '';
+        　　for (i = 0; i < len; i++) {
+        　　　　pwd += $chars.charAt(Math.floor(Math.random() * maxPos));
+        　　}
+        　　return pwd;
+        },
+        // 解析样式
+        parseTemplateStyles:function(randomStr,stylesonei,style,html) {
+            // 拿出样式部分内容
+            stylesone_str = stylesonei.replace(/^(<style.*?>)+|(<\/style>)+$/gmi,'');
+
+            // 检查style标签
+            var stylesonestrAttrs = stylesonei.match(/<style[^>]*>/gmi);
+            if (stylesonestrAttrs != null && stylesonestrAttrs.length > 0) {
+                stylesonestrAttrs = stylesonestrAttrs[0].replace(/^(<style)+|(>)+$/gmi,'');
+            }else{
+                stylesonestrAttrs = '';
+            }
+
+            // 检查是否存在Attr标签
+            if (stylesone_str.length>0) {
+                var styles_classlist= stylesone_str.match(/.*?\{/gmi);
+                // 检查是否有scoped，有为局部样式
+                if (stylesonestrAttrs.toLowerCase().indexOf('scoped') >-1 && styles_classlist != null && styles_classlist.length >0) {
+                    // 更新style对应的template标签
+                    html = this.parseTemplates(html,randomStr);
+                    stylesone_str = this.parseStyles(styles_classlist,stylesone_str,randomStr);
+                    
+                }
+                // 生成style样式
+                style += "<component :is=\"'style'\"";
+                style += stylesonestrAttrs;
+                style += ">";
+                style += stylesone_str;
+                style += "</component>\r\n";
+            }
+            return {style:style,html:html};
+        },
+        // 解析模板
+        parseStyles:function(styles_classlist,stylesone_str,randomStr) {
+            for (var scti = 0; scti < styles_classlist.length; scti++) {
+                // 单个class样式类名
+                var classItemName = styles_classlist[scti].replace(/\{/gmi,'');
+                var classItemNamekey = classItemName.split(",");
+
+                // 如果批量设置样式
+                if (classItemNamekey.length>1) {
+                    for (var cink = 0; cink < classItemNamekey.length; cink++) {
+                        // 更新style样式
+                        var classItemNameRegExp = new RegExp("\\"+classItemNamekey[cink], '');
+                        stylesone_str = stylesone_str.replace(classItemNameRegExp,classItemNamekey[cink]+"["+randomStr+"] ");
+                    }
+                }else{
+                    var classItemNameRegExp = new RegExp(classItemName+'\{+|'+classItemName+'\\s+\{', '');
+                    stylesone_str = stylesone_str.replace(classItemNameRegExp,classItemName+"["+randomStr+"] {");
+                }
+                
+            }
+            return stylesone_str;
+        },
+        // 解析模板
+        parseTemplates:function(html,randomStr) {
+            var htmls = html.replace(/<!--[\w\W\r\n]*?-->/gmi, '');
+            var htmlslist = htmls.match(/<[^/].*?>/gmi);
+            for (var i = 0; i < htmlslist.length; i++) {
+                var replacestr = htmlslist[i].substr(0,htmlslist[i].length - 1);
+                var newstr = replacestr+' '+randomStr+' >';
+                html = html.replace(htmlslist[i],newstr);
+            }
+            return html;
+        },
         /**
          * [parseimports 解析import操作]
          * @param  {[type]} script  [js原始字符串]
@@ -141,12 +220,48 @@
         parseimports:function(script,options) {
         	// 剔除js注释代码
         	var scripttxts = script.replace(/(?:^|\n|\r)\s*\/\*[\s\S]*?\*\/\s*(?:\r|\n|$)/g, '\n').replace(/(?:^|\n|\r)\s*\/\/.*(?:\r|\n|$)/g, '\n');
-        	// 匹配出import导入项
+        	// 匹配出import导入项(import '路径')
+            var importsurl = scripttxts.match(/import (['"])(?:(?!\1).)*?\1/gmi);
+            
+            if (importsurl != null && importsurl.length > 0) {
+                for (var i = 0; i < importsurl.length; i++) {
+                    // 匹配出import 路径
+                    var importsurlval = importsurl[i].match(/(['"])(?:(?!\1).)*?\1/gmi);
+                    if (importsurlval != null && importsurlval.length > 0) {
+                        var imporsurlsrc = importsurlval[0].replace(/^["|'](.*)["|']$/gmi,"$1");
+                    }else{
+                        var imporsurlsrc = '';
+                    }
+                    if (imporsurlsrc != '') {
+                        var imporurlspos = imporsurlsrc.split("/");
+                        var filenamestrurl = imporurlspos[imporurlspos.length-1];
+                        if (filenamestrurl.split('?') != null && filenamestrurl.split('?').length > 1) {
+                            filenamestrurl = filenamestrurl.split('?')[0];
+                        }
+                        var imporsurlcpp = filenamestrurl.split(".");
+                        // 没有后缀添加后缀
+                        if (imporsurlcpp.length<2) {
+                            var importurltype = '';
+                        }else{
+
+                            var importurltype = imporsurlcpp[imporsurlcpp.length-1].toLowerCase();
+                        }
+                        // 判断import文件类型，支持js、css
+                        if (importurltype == 'js') {
+                            this.loadJs([imporsurlsrc]);
+                        }else if (importurltype == 'css') {
+                            this.loadCss([imporsurlsrc]);
+                        }else{
+                            throw Error("Compile error: file import error, "+importurltype+" type file is not supported. CSS, JS are currently supported");
+                        }
+                    }
+                }
+            }
+
+            // 匹配出import导入项(import 名称 from '路径')
         	var imports = scripttxts.match(/import [\s\S]*? from (['"])(?:(?!\1).)*?\1/gmi);
         	var scripttxt = scripttxts;
-
             if (imports != null && imports.length > 0) {
-
             	for (var i = 0; i < imports.length; i++) {
             		// 匹配出import 名称
             		var importskey = imports[i].match(/import [\s\S]*? from/gmi);
@@ -165,13 +280,10 @@
             		}
 
             		if (importname != '' && imporssrc != '') {
-
             			var imporspos = imporssrc.split("/");
                         var filenamestr = imporspos[imporspos.length-1];
-                        var filenameparm ='';
                         if (filenamestr.split('?') != null && filenamestr.split('?').length > 1) {
-                            var filenamestrlist = filenamestr.split('?');
-                            filenamestr =filenamestrlist[0];
+                            filenamestr = filenamestr.split('?')[0];
                         }
             			var imporssrcpp = filenamestr.split(".");
     					// 没有后缀添加后缀
@@ -183,19 +295,14 @@
     					}
     					// 判断import文件类型，默认为vue，支持js、css、vue、html
     					if (importtype == 'vue' || importtype == 'html') {
-
-    						// 匹配components组件注册部分
-    						scriptsstr = scripttxt.match(/components.*?{.*?[\s\S]*?}/gmi);
-    						if (scriptsstr!= null && scriptsstr.length>0) {
-    							scriptsstr = scriptsstr.join('');
-    							var scriptsstrRegExp = new RegExp(":.*?"+importname,"gmi");
-    							scripttxtrpe = scriptsstr.replace(scriptsstrRegExp,":wmui.loadVue('"+imporssrc+"')");
-    							if (imporssrcpp.length<2) {
-    								scripttxtrpe = scriptsstr.replace(scriptsstrRegExp,":wmui.loadVue('"+imporssrc+".vue')");
-    							}
-    							scripttxt = scripttxt.replace(/components.*?{.*?[\s\S]*?}/gmi,scripttxtrpe);
-    						}
-
+                            
+                            if (importname.match(/^[a-zA-Z\$_][a-zA-Z\d_]*$/) == null) {
+                                throw new Error("Compile error: The name of "+importname+" is malformed. Please check the syntax："+imports[i]);
+                            }
+                            // 匹配出对应import部分替换成对应变量
+    						var scriptsstrRegExp = new RegExp(imports[i],"gmi");
+                            scripttxt = scripttxt.replace(imports[i],"var "+importname+" = wmui.loadVue('"+imporssrc+"')");
+                            
     						// 匹配自动Vue.use部分
     						var scriptstrsregexp = new RegExp("Vue\.use\(.*?"+importname+".*)","gmi");
     				        var vueusestrs = scripttxt.match(scriptstrsregexp);
@@ -348,6 +455,19 @@
             if (docres) {
             	document.getElementsByTagName('head')[0].removeChild(script);
             }
+        },
+        //创建一个script标签
+        loadCssCode:function(code) {
+            var style = document.createElement("style");  //创建一个script标签
+            style.type = "text/css";
+            try {
+                //IE浏览器认为script是特殊元素,不能再访问子节点;报错;
+                style.appendChild(document.createTextNode(code));
+            }
+            catch (ex) {
+                style.text = code;
+            }
+            document.getElementsByTagName('head')[0].appendChild(style);
         },
         /**
     	 * [useJs 动态加载js]
