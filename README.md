@@ -1,4 +1,4 @@
-# wmui wmui.js 一款实现在html中直接使用vue组件的js    
+# vue wmui.js 一款实现在html中直接使用vue组件的js    
 QQ技术群：726982781  
 
 一款实现在html中直接使用vue组件的js，操作简单，兼容性良好。
