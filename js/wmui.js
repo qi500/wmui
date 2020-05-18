@@ -603,32 +603,33 @@
     	 * @param  {[type]} time  [有效期(秒)]
     	 */
         cache:function(key,value,time) {
-        	if (key != undefined && key != null && value != undefined && value != null) {
-    	        if (time != undefined && time != null) {
-    	            var expirse = Number(Math.round(new Date() / 1000))+Number(time);
-    	            var setdata = {value: value, expirse:expirse};
-    	            window.localStorage.setItem(key, JSON.stringify(setdata));
-    	        }else{
-    	            var setdata = {value: value};
-    	            window.localStorage.setItem(key, JSON.stringify(setdata));
-    	        }
-    	    }else if(key != undefined && key != null  && value == undefined ) {
-    	        var getvalue = JSON.parse(window.localStorage.getItem(key));
-    	        if (getvalue && getvalue != undefined && getvalue != null) {
-    	            if (getvalue.expirse != undefined && getvalue.expirse != null && getvalue.expirse < Math.round(new Date() / 1000)) {
-    	                window.localStorage.removeItem(key);
-    	                return '';
-    	            } else {
-    	                
-    	                return getvalue.value;
-    	            }
-    	        }
-    	        return '';
-    	    }else if(key != undefined && key != null && value != undefined && value == null) {
-    	        window.localStorage.removeItem(key);
-    	    }else{
-    	        window.localStorage.clear();
-    	    }
+        	if (typeof key != 'undefined' && key != null && typeof value != 'undefined' && value != null) {
+                if (typeof time !== 'undefined' && time != null) {
+                    var expirse = Number(Math.round(new Date() / 1000))+Number(time);
+                    var setdata = {value: value, expirse:expirse};
+                    console.log(key,JSON.stringify(setdata));
+                    window.localStorage.setItem(key, JSON.stringify(setdata));
+                }else{
+                    var setdata = {value: value};
+                    window.localStorage.setItem(key, JSON.stringify(setdata));
+                }
+            }else if(typeof key !== 'undefined' && key !== null  && typeof value === 'undefined' ) {
+                var getvalue = JSON.parse(window.localStorage.getItem(key));
+                if (getvalue && getvalue != undefined && getvalue != null) {
+                    if (getvalue.expirse != undefined && getvalue.expirse != null && getvalue.expirse < Math.round(new Date() / 1000)) {
+                        window.localStorage.removeItem(key);
+                        return '';
+                    } else {
+                        
+                        return getvalue.value;
+                    }
+                }
+                return '';
+            }else if(typeof key !== 'undefined' && key !== null && typeof value !== 'undefined' && value === null) {
+                window.localStorage.removeItem(key);
+            }else{
+                window.localStorage.clear();
+            }
         }
 
     };
