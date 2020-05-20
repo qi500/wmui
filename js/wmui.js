@@ -1,8 +1,8 @@
 
 /**
- * [wmui wmui.js插件 v2.1.3]
+ * [wmui wmui.js插件 v2.1.4]
  * Author：仙客来
- * Date  : 2020-05-17
+ * Date  : 2020-05-20
  * Email ：<1796627261@qq.com>
  * url   : https://github.com/wamkj/wmui
  * 调用组件		:wmui.loadVue(url)
@@ -166,8 +166,8 @@
                 // 检查是否有scoped，有为局部样式
                 if (stylesonestrAttrs.toLowerCase().indexOf('scoped') >-1 && styles_classlist != null && styles_classlist.length >0) {
                     // 更新style对应的template标签
-                    html = this.parseTemplates(html,randomStr);
                     stylesone_str = this.parseStyles(styles_classlist,stylesone_str,randomStr);
+                    html = this.parseTemplates(html,randomStr);
                     
                 }
                 // 生成style样式
@@ -179,13 +179,12 @@
             }
             return {style:style,html:html};
         },
-        // 解析模板
+        // 解析样式模板
         parseStyles:function(styles_classlist,stylesone_str,randomStr) {
             for (var scti = 0; scti < styles_classlist.length; scti++) {
                 // 单个class样式类名
                 var classItemName = styles_classlist[scti].replace(/\{/gmi,'');
                 var classItemNamekey = classItemName.split(",");
-
                 // 如果批量设置样式
                 if (classItemNamekey.length>1) {
                     for (var cink = 0; cink < classItemNamekey.length; cink++) {
@@ -207,7 +206,16 @@
             var htmlslist = htmls.match(/<[^/].*?>/gmi);
             for (var i = 0; i < htmlslist.length; i++) {
                 var replacestr = htmlslist[i].substr(0,htmlslist[i].length - 1);
-                var newstr = replacestr+' '+randomStr+' >';
+                // 检查是否是带/的标签
+                replacestr = replacestr.replace(/(\s*$)/g, "");
+                var replacestrxg = replacestr.substr(replacestr.length - 1,1);
+                
+                if (replacestrxg == '/') {
+                    replacestr = replacestr.substr(0,replacestr.length - 1);
+                    var newstr = replacestr+' '+randomStr+' />';
+                }else{
+                    var newstr = replacestr+' '+randomStr+' >';
+                }
                 html = html.replace(htmlslist[i],newstr);
             }
             return html;

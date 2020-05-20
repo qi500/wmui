@@ -5,6 +5,7 @@
 			<testasss :testa='message'></testasss>
 			<testw :testw="message"></testw>
 			<test-name :testname='message'></test-name>
+			<input type="text" name=""    / >
 	</div>
 	
 </template>
