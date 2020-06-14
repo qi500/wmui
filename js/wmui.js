@@ -1,8 +1,8 @@
 
 /**
- * [wmui wmui.js插件 v2.1.4]
+ * [wmui wmui.js插件 v2.1.5]
  * Author：仙客来
- * Date  : 2020-05-20
+ * Date  : 2020-06-14
  * Email ：<1796627261@qq.com>
  * url   : https://github.com/wamkj/wmui
  * 调用组件		:wmui.loadVue(url)
@@ -37,10 +37,14 @@
     }
 }(this, function () {
     var wmui = {
+        replaceNotesCode:function(content) {
+            // 剔除js注释代码
+            return content.replace(/(?:^|\n|\r)\s*\/\*[\s\S]*?\*\/\s*(?:\r|\n|$)/g, '\n').replace(/(?:^|\n|\r)\s*\/\/.*(?:\r|\n|$)/g, '\n').replace(/<!--(.|[\r\n])*?-->/g, ' ');
+        },
         /**
          * 解析组件内容
          */
-        parseComponent: function (content, options) {
+        parseComponent: function (url,content, options) {
             if (!content) throw Error("content is null.");
             if (!options) options = {};
 
@@ -79,18 +83,15 @@
                 }
             }
             options.template = html;
-
-
             // 匹配挂载javascript字符串
-      		var scriptsone = content.match(/(<script.*?>)[\s\S]*?(<\/script>)/gmi);
+            contents = this.replaceNotesCode(content);
+      		var scriptsone = contents.match(/(<script.*?>)[\s\S]*?(<\/script>)/gmi);
       		var script = "";
       		if (scriptsone != null && scriptsone.length > 0) {
-            	
     	        for (var i = 0; i < scriptsone.length; i++) {
     	        	script += scriptsone[i].replace(/^(<script.*?>)+|(<\/script>)+$/gmi,'');
     	        }
     	    }
-
             // 更新javascript字符串
             var scripttxt_options = this.parseimports(script,options);
             var oldscript = script;
@@ -98,18 +99,16 @@
             options = scripttxt_options.options;
 
             // 生成export default或module.exports=或exports=内容部分正则
-            var edmheadstrRegExp = /(export.*?default.*{[\s\S]*})+|(module\.exports.*\=.*{[\s\S]*})+|(exports.*\=.*{[\s\S]*})/gmi;
+            var edmheadstrRegExp = /(export.*?default.*{[\s\S]*};)+|(module\.exports.*\=.*{[\s\S]*};)+|(exports.*\=.*{[\s\S]*};)+|(export.*?default.*{[\s\S]*})+|(module\.exports.*\=.*{[\s\S]*})+|(exports.*\=.*{[\s\S]*})/gmi;
             
             // 执行组件export default或module.exports=头部js
             var edmheadstr = scripttxt.replace(edmheadstrRegExp,'').replace(/(^\s*)|(\s*$)/g, "");
             if (edmheadstr != null && edmheadstr.length >0) {
                 var edmheadstrs = edmheadstr.replace(/import [\s\S]*? from (['"])(?:(?!\1).)*?\1\;/gmi,'').replace(/import (['"])(?:(?!\1).)*?\1\;/gmi, "").replace(/(^\s*)|(\s*$)/g, "");
                 if (edmheadstrs != null  && edmheadstrs.length >0) {
-                    try {
-                        this.loadJsCode(edmheadstrs);
-                    }catch(err) {
-                        throw new Error("Compile error: The script part of the Vue component is compiled incorrectly. Please check the syntax："+edmheadstrs);
-                    }
+
+                    this.errorMessage(url,edmheadstrs,edmheadstrs);
+                    this.loadJsCode(edmheadstrs);
                 }
             }
 
@@ -120,21 +119,52 @@
                 script = "(" + /{[\s\S]*}/gmi.exec(scriptstrtxts) + ")";
 
                 // 把字符串转当成js执行
-                // var obj = eval(script);
-                try {
-                    var obj = (new Function("return " + script))();
-
-                }catch(err) {
-                    throw new Error("Compile error: The script part of the Vue component is compiled incorrectly. Please check the syntax："+oldscript);
-                }
+                this.errorMessage(url,script,scriptstrtxts);
+                var obj = (new Function("return " + script+""))();
+                
                 // 把每个对象中的函数方法添加到options上
                 for (var prop in obj) {
                     options[prop] = obj[prop];
                 }
             }
-            
-            
             return options;
+        },
+        // 抛出异常
+        errorMessage:function(url,script,edmheadstrs) {
+            var _this = this;
+            function errorinfo() {
+                _this.throwException(url,edmheadstrs);
+                return script;
+            }
+            eval(errorinfo());
+            
+        },
+        // 提交异常
+        throwException:function(url,edmheadstrs) {
+            /** 
+               * @param {String} errorMessage  错误信息 
+               * @param {String} scriptURI   出错的文件 
+               * @param {Long}  lineNumber   出错代码的行号 
+               * @param {Long}  columnNumber  出错代码的列号 
+               * @param {Object} errorObj    错误的详细信息，Anything 
+               */
+            window.onerror = function(errorMessage, scriptURI, lineNumber,columnNumber,errorObj) {
+                var log = '\n'+"error-messages：" + errorMessage+'\n';
+                var errstr = edmheadstrs.split("\n");
+                log+= "error-file-url：" +url+'\n';
+                log+= "error-msg-info：" + errorObj+'\n';
+                if (errstr[lineNumber-4] != undefined) {
+                    log+= "error-position："+'\n'+errstr[lineNumber-4]+'\n'+errstr[lineNumber-3]+'\n'+errstr[lineNumber-2]+'\n'+errstr[lineNumber-1]+'\n';
+                }else if (errstr[lineNumber-3] != undefined) {
+                    log+= "error-position："+'\n'+errstr[lineNumber-3]+'\n'+errstr[lineNumber-2]+'\n'+errstr[lineNumber-1]+'\n';
+                }else if (errstr[lineNumber-2] != undefined) {
+                    log+= "error-position："+'\n'+errstr[lineNumber-2]+'\n'+errstr[lineNumber-1]+'\n';
+                }else{
+                    log+= "error-position："+'\n'+errstr[lineNumber-1]+'\n';
+                }
+                console.error(log);
+                return true;
+            }
         },
         // 生成字符串
         randomStr:function (len) {
@@ -226,10 +256,8 @@
          * @param  {[type]} options [返回选项]
          */
         parseimports:function(script,options) {
-        	// 剔除js注释代码
-        	var scripttxts = script.replace(/(?:^|\n|\r)\s*\/\*[\s\S]*?\*\/\s*(?:\r|\n|$)/g, '\n').replace(/(?:^|\n|\r)\s*\/\/.*(?:\r|\n|$)/g, '\n');
         	// 匹配出import导入项(import '路径')
-            var importsurl = scripttxts.match(/import (['"])(?:(?!\1).)*?\1/gmi);
+            var importsurl = script.match(/import (['"])(?:(?!\1).)*?\1/gmi);
             
             if (importsurl != null && importsurl.length > 0) {
                 for (var i = 0; i < importsurl.length; i++) {
@@ -265,10 +293,9 @@
                     }
                 }
             }
-
             // 匹配出import导入项(import 名称 from '路径')
-        	var imports = scripttxts.match(/import [\s\S]*? from (['"])(?:(?!\1).)*?\1/gmi);
-        	var scripttxt = scripttxts;
+        	var imports = script.match(/import [\s\S]*? from (['"])(?:(?!\1).)*?\1/gmi);
+        	var scripttxt = script;
             if (imports != null && imports.length > 0) {
             	for (var i = 0; i < imports.length; i++) {
             		// 匹配出import 名称
@@ -348,7 +375,7 @@
                     data:{_loadVue:new Date().getTime(),_callback:window.location.href},
     			    async : true,
     			    success:function(message){
-    			        var options = target.parseComponent(message, options);
+    			        var options = target.parseComponent(url,message, options);
     		            resolve(options);
     			    }
     			    
@@ -615,7 +642,6 @@
                 if (typeof time !== 'undefined' && time != null) {
                     var expirse = Number(Math.round(new Date() / 1000))+Number(time);
                     var setdata = {value: value, expirse:expirse};
-                    console.log(key,JSON.stringify(setdata));
                     window.localStorage.setItem(key, JSON.stringify(setdata));
                 }else{
                     var setdata = {value: value};
