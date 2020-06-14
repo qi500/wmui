@@ -1,7 +1,7 @@
 
 /**
  * [wmui wmui.js插件 v2.1.5]
- * Author：仙客来
+ * Author：侠客来
  * Date  : 2020-06-14
  * Email ：<1796627261@qq.com>
  * url   : https://github.com/wamkj/wmui
