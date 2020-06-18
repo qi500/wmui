@@ -369,7 +369,7 @@
                 target.ajax({
                     method:"get",
                     url:url,
-                    data:{_loadVue:new Date().getTime(),_callback:window.location.href},
+                    data:{_loadVue:new Date().getTime()},
                     async : true,
                     success:function(message){
                         var options = target.parseComponent(url,message, options);
