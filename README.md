@@ -14,7 +14,7 @@ wmui.js实现任意Vue组件在html中加载调用
 
 4、只需加载必要的vue.js,无需额外依赖
 
-5、可以完美脱离nodejs、npm、webpack
+5、可以完美脱离nodejs、webpack
 
 6、支持ie8以上浏览器
 
