@@ -1,8 +1,8 @@
 
 /**
- * [wmui wmui.js插件 v2.1.5]
+ * [wmui wmui.js插件 v2.1.6]
  * Author：侠客来
- * Date  : 2020-06-17
+ * Date  : 2020-09-16
  * Email ：<1796627261@qq.com>
  * url   : https://github.com/wamkj/wmui
  * 调用组件     :wmui.loadVue(url)
@@ -13,6 +13,10 @@
  * ajax请求
  * wmui.ajax({
  *   method:"get",
+ *   dataType:"html",
+ *   headers:{
+ *       'token':'123'
+ *   },
  *   url:'',
  *   data:{},
  *   async : true,
@@ -206,7 +210,7 @@
             }
             return {style:style,html:html};
         },
-        // 解析样式模板
+        // 解析模板样式,scoped设置局部样式
         parseStyles:function(styles_classlist,stylesone_str,randomStr) {
             for (var scti = 0; scti < styles_classlist.length; scti++) {
                 // 单个class样式类名
@@ -220,6 +224,7 @@
                         stylesone_str = stylesone_str.replace(classItemNameRegExp,classItemNamekey[cink]+"["+randomStr+"] ");
                     }
                 }else{
+                    // 设置单个样式
                     var classItemNameRegExp = new RegExp(classItemName+'\{+|'+classItemName+'\\s+\{', '');
                     stylesone_str = stylesone_str.replace(classItemNameRegExp,classItemName+"["+randomStr+"] {");
                 }
@@ -383,6 +388,10 @@
          * [ajax post get请求]
          * wmui.ajax({
          *   method:"get",
+         *   dataType:"html",
+         *   headers:{
+         *       'token':'123'
+         *   },
          *   url:'',
          *   async : true,
          *   success:function(message){
@@ -394,12 +403,19 @@
         ajax: function (config) {
             config = config || {};
             //GET：用"GET"方式发送数据,只能256KB;POST：用"POST"方式发送数据
-            config.method = config.method.toUpperCase() || "GET"||"get"; 
+            config.method = config.method.toUpperCase() || "GET"; 
             config.url = config.url || "";
             //true为异步，false为同步
             config.async = config.async === false ? false : true;
             //所传的数的数据类型
-            config.dataType = config.dataType || "text"; 
+            config.dataType = config.dataType || "TEXT";
+            if (config.dataType !="") {
+                config.dataType = config.dataType.toUpperCase();
+            }else{
+                config.dataType = "TEXT";
+            }
+            // 请求头headers
+            config.headers = config.headers || {};
             //默认表单格式 config.dataType='json'
             config.contentType = config.contentType || "application/x-www-form-urlencoded;charset=utf-8"; 
             config.data = config.data || null;
@@ -420,45 +436,56 @@
                 }
                 return obj;
             }
+            function setRequestHeader(){
+                var headers = config.headers;
+                for (var item in headers) {
+                    xmlHttp.setRequestHeader(item, headers[item]);
+                }
+            }
             //获取XML 对象
             var xmlHttp = getXmlHttp(); 
             //请求数据data
-            var postData = getUrlParama(config.data); 
-            if (config.contentType === "application/json;charset=utf-8" && config.dataType === "json") {
+            var postData = getUrlParama(config.data);
+            if (config.contentType === "application/json;charset=utf-8") {
                 //转化为json字符串
                 postData = JSON.stringify(config.data); 
             }
-            if (config.method === 'POST' || config.method === 'post') {
-                xmlHttp.open(config.method, config.url, config.async);
-                //而POST请求需要设置请求头，用来传递参数
-                if (config.contentType === "application/json;charset=utf-8" && config.dataType === "json") {
+            var configUrl = config.url;
+            if (config.method === 'POST') {
+                configUrl = config.url;
+            }else if(config.method === 'GET') {
+                //GET请求，参数是拼接到url上面；   
+                postData = config.url.indexOf("?") >= 0 ? "&" + postData : "?" + postData;
+                configUrl = config.url + postData;
+            }
+            xmlHttp.open(config.method,configUrl, config.async);
+            //而POST请求需要设置请求头，用来传递参数
+            // 设置请求头headers
+            setRequestHeader();
+            if (config.method === 'POST') {
+                if (config.contentType === "application/json;charset=utf-8") {
                     xmlHttp.setRequestHeader('Content-Type',"multipart/form-data"); 
                 }else{
                     xmlHttp.setRequestHeader('Content-Type',config.contentType); 
                 }
-
-            }else if(config.method === 'GET' || config.method === 'get') {
-                //GET请求，参数是拼接到url上面；   
-                if (config.contentType === "application/json;charset=utf-8" && config.dataType === "json") {
-                    // 设置get方式json的参数名getjson
-                    xmlHttp.open(config.method, config.url + '?GetJson='+ encodeURIComponent(postData), config.async);
-                }else{
-                    postData = config.url.indexOf("?") >= 0 ? "&" + postData : "?" + postData; 
-                    xmlHttp.open(config.method, config.url + postData, config.async);
-                }
-                postData = null; //重置参数
             }
             xmlHttp.onreadystatechange = function () {
                 if (xmlHttp.readyState == 4) {
                     var status = xmlHttp.status;
-                    if (status >= 200 && status < 300 || xhr.status==304) {
-                        config.success && config.success(xmlHttp.responseText);
+                    if (status >= 200 && status < 300 || status==304) {
+                        if (config.dataType == "JSON") {
+                            var responseText = JSON.parse(xmlHttp.responseText);
+                        }else{
+                            var responseText = xmlHttp.responseText;
+                        }
+                        config.success && config.success(responseText);
                     } else {
                         config.error && config.error(status);
                     }
                 }
             };
             xmlHttp.send(postData);
+            postData = null; //重置参数
             /**
              * [getUrlParama url参数拼接]
              * @param  {[any]} data [待拼接数据]
