@@ -1,8 +1,8 @@
-# wmui.js是一款直接html中使用Vue组件功能的httpVueLoader
+# wmui.js是一款直接html文件中使用Vue组件功能的小编译器，也可以称呼为vue实时编译插件
 
-一款实现在html中直接使用vue组件的js，操作简单，兼容性良好。
+一款实现在html文件中直接引用vue组件，无需依赖nodejs，也不用编译打包，实时编写，实时运行，操作简单，兼容性良好的多功能小编译器或插件。
 
-wmui.js实现任意Vue组件在html中加载调用 
+wmui.js实现任意Vue组件在html文件文本中直接加载调用 （ES6的语法需要转化成ES5的语法）
 
 特点：  
 1、可以在html中直接使用vue组件，也就是说老项目也可以用vue组件了，采用XMLHttpRequest读取文件
@@ -23,12 +23,13 @@ wmui.js实现任意Vue组件在html中加载调用
 
 9、此处省略.....个字，好处需自己体会！哈哈
 
-注意事项：
-1、首先加载或者引入vue.js
-2、再次加载或者引入wmui.js
-3、创建vue实例，在components注册组件，用wmui.loadVue('组件地址')来加载挂载vue组件
+注意事项：  
+1、首先加载或者引入vue.js  
+2、再次加载或者引入wmui.js  
+3、创建vue实例，在components注册组件，用wmui.loadVue('组件地址')来加载挂载vue组件  
+4、目前style样式类似只支持css，后续完善对less以及scss的支持！    
 
-
+# 案例
 		<div id="app">
 			<test :model='message'></test>
 			<test-name :testname='message'></test-name>
