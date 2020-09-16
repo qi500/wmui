@@ -123,12 +123,12 @@ wmui.js实现任意Vue组件在html中加载调用
   ajax请求
   wmui.ajax({  
      method:"get",  
-     url:'',
-     dataType:"html",
-   	 headers:{
-       'token':'123'
+     url:'',  
+     dataType:"html",  
+     headers:{  
+        'token':'123'  
      },  
-     data:{}, 
+     data:{},  
      async : true,  
      success:function(message){  
         console.log(message);  
