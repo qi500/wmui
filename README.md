@@ -122,9 +122,13 @@ wmui.js实现任意Vue组件在html中加载调用
   本地缓存		:wmui.cache(key,value,有效期(s))  
   ajax请求
   wmui.ajax({  
-      method:"get",  
-     url:'',  
-     data:{},  
+     method:"get",  
+     url:'',
+     dataType:"html",
+   	 headers:{
+       'token':'123'
+     },  
+     data:{}, 
      async : true,  
      success:function(message){  
         console.log(message);  
