@@ -29,7 +29,7 @@ wmui.js实现任意Vue组件在html文件文本中直接加载调用 （ES6的�
 3、创建vue实例，在components注册组件，用wmui.loadVue('组件地址')来加载挂载vue组件  
 4、目前style样式类似只支持css，后续完善对less以及scss的支持！    
 
-# 案例
+### 案例
 		<div id="app">
 			<test :model='message'></test>
 			<test-name :testname='message'></test-name>
