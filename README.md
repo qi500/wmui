@@ -1,5 +1,4 @@
-# wmui.js是一款直接html中使用Vue组件功能的httpVueLoader   
-QQ技术群：726982781  
+# wmui.js是一款直接html中使用Vue组件功能的httpVueLoader
 
 一款实现在html中直接使用vue组件的js，操作简单，兼容性良好。
 
@@ -14,7 +13,7 @@ wmui.js实现任意Vue组件在html中加载调用
 
 4、只需加载必要的vue.js,无需额外依赖
 
-5、可以完美脱离nodejs、webpack
+5、可以完美脱离nodejs
 
 6、支持ie8以上浏览器
 
